@@ -1,0 +1,164 @@
+{
+  "name": "finance-admin-app",
+  "version": "1.0.0",
+  "description": "Finance Management System Admin Panel for Lending Authorities",
+  "main": "node_modules/expo/AppEntry.js",
+  "private": true,
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "eject": "expo eject",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .js,.jsx",
+    "lint:fix": "eslint src --ext .js,.jsx --fix",
+    "build:web": "expo build:web",
+    "build:android": "eas build --platform android",
+    "build:ios": "eas build --platform ios",
+    "build": "expo build",
+    "firebase:login": "firebase login",
+    "firebase:init": "firebase init",
+    "firebase:deploy": "firebase deploy",
+    "firebase:emulators": "firebase emulators:start",
+    "db:seed": "node scripts/seedDatabase.js",
+    "db:backup": "node scripts/backupDatabase.js",
+    "precommit": "lint-staged",
+    "prepare": "husky install"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-native": "^0.71.0",
+    "react-native-screens": "^3.20.0",
+    "react-native-safe-area-context": "^4.5.0",
+    "@react-navigation/native": "^6.1.0",
+    "@react-navigation/bottom-tabs": "^6.5.0",
+    "@react-navigation/stack": "^6.3.0",
+    "@react-navigation/material-top-tabs": "^6.5.0",
+    "react-native-tab-view": "^3.2.0",
+    "@react-navigation/drawer": "^6.6.0",
+    "react-native-gesture-handler": "^2.9.0",
+    "react-native-reanimated": "^2.14.0",
+    "firebase": "^9.22.0",
+    "@react-native-firebase/app": "^17.1.0",
+    "@react-native-firebase/auth": "^17.1.0",
+    "@react-native-firebase/firestore": "^17.1.0",
+    "@react-native-firebase/storage": "^17.1.0",
+    "@react-native-firebase/functions": "^17.1.0",
+    "react-native-async-storage": "^1.17.0",
+    "axios": "^1.4.0",
+    "lodash": "^4.17.21",
+    "date-fns": "^2.30.0",
+    "dotenv": "^16.0.3",
+    "expo": "^48.0.0",
+    "expo-constants": "^14.0.0",
+    "expo-document-picker": "^11.4.0",
+    "expo-file-system": "^15.2.0",
+    "expo-image-picker": "^14.1.0",
+    "expo-notifications": "^0.17.0",
+    "expo-permissions": "^14.1.0",
+    "expo-splash-screen": "^0.18.0",
+    "expo-status-bar": "^1.4.0",
+    "expo-updates": "^0.16.0",
+    "@expo/vector-icons": "^13.0.0",
+    "react-native-svg": "^13.9.0",
+    "react-native-svg-charts": "^5.7.0",
+    "prop-types": "^15.8.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.21.0",
+    "@babel/preset-env": "^7.21.0",
+    "@babel/preset-react": "^7.18.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/react-native": "^11.5.0",
+    "jest": "^29.5.0",
+    "jest-expo": "^48.0.0",
+    "eslint": "^8.38.0",
+    "eslint-config-react-app": "^7.0.1",
+    "prettier": "^2.8.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^13.2.0",
+    "firebase-tools": "^11.20.0",
+    "@firebase/testing": "^0.20.0"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "testPathIgnorePatterns": [
+      "/node_modules",
+      "/build"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/index.js",
+      "!src/App.js"
+    ]
+  },
+  "babel": {
+    "presets": [
+      "babel-preset-expo"
+    ],
+    "plugins": [
+      [
+        "@babel/plugin-proposal-decorators",
+        {
+          "legacy": true
+        }
+      ]
+    ]
+  },
+  "expo": {
+    "name": "Finance Admin",
+    "slug": "finance-admin-app",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTabletMode": true,
+      "requireFullScreen": false
+    },
+    "android": {
+      "package": "com.financeadmin.app",
+      "versionCode": 1,
+      "adaptive": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ]
+    ]
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "keywords": [
+    "finance",
+    "lending",
+    "loan",
+    "admin",
+    "dashboard",
+    "react-native",
+    "firebase"
+  ],
+  "author": "Your Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourorg/finance-admin-app"
+  }
+}
