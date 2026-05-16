@@ -1,0 +1,8 @@
+{
+  "name": "Lending Admin System",
+  "description": "Finance Management System Admin Panel for Lending Authorities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

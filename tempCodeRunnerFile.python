@@ -1,0 +1,659 @@
+import { useState, useEffect } from "react";
+
+const COLORS = {
+  primary: "#1a56db",
+  primaryDark: "#1e429f",
+  primaryLight: "#e8f0fe",
+  success: "#057a55",
+  successLight: "#def7ec",
+  danger: "#e02424",
+  dangerLight: "#fde8e8",
+  warning: "#c27803",
+  warningLight: "#fdf6b2",
+  gray50: "#f9fafb",
+  gray100: "#f3f4f6",
+  gray200: "#e5e7eb",
+  gray300: "#d1d5db",
+  gray400: "#9ca3af",
+  gray500: "#6b7280",
+  gray600: "#4b5563",
+  gray700: "#374151",
+  gray800: "#1f2937",
+  gray900: "#111827",
+  white: "#ffffff",
+  sidebar: "#0f172a",
+  sidebarHover: "#1e293b",
+  accent: "#f59e0b",
+};
+
+// ─── MOCK DATA ───────────────────────────────────────────────────────────────
+const CUSTOMERS = [
+  { id: "C001", name: "Priya Sharma", email: "priya@email.com", phone: "9876543210", city: "Mumbai", kyc: "Verified", loans: 2, joinDate: "2024-01-15", creditScore: 780 },
+  { id: "C002", name: "Rahul Gupta", email: "rahul@email.com", phone: "9845632100", city: "Delhi", kyc: "Pending", loans: 1, joinDate: "2024-02-20", creditScore: 650 },
+  { id: "C003", name: "Anita Patel", email: "anita@email.com", phone: "9123456789", city: "Ahmedabad", kyc: "Verified", loans: 3, joinDate: "2023-11-10", creditScore: 820 },
+  { id: "C004", name: "Suresh Kumar", email: "suresh@email.com", phone: "9988776655", city: "Bangalore", kyc: "Rejected", loans: 0, joinDate: "2024-03-05", creditScore: 520 },
+  { id: "C005", name: "Meena Joshi", email: "meena@email.com", phone: "9871234560", city: "Pune", kyc: "Verified", loans: 1, joinDate: "2024-01-28", creditScore: 710 },
+  { id: "C006", name: "Vikram Singh", email: "vikram@email.com", phone: "9765432100", city: "Jaipur", kyc: "Pending", loans: 0, joinDate: "2024-04-01", creditScore: 690 },
+];
+
+const LOANS = [
+  { id: "L001", customerId: "C001", customerName: "Priya Sharma", amount: 250000, type: "Personal", tenure: 24, interest: 12.5, status: "Active", disbursedDate: "2024-02-01", nextDue: "2025-05-15", paid: 180000, remaining: 70000, emi: 11850 },
+  { id: "L002", customerId: "C002", customerName: "Rahul Gupta", amount: 500000, type: "Home", tenure: 60, interest: 9.5, status: "Pending", disbursedDate: null, nextDue: null, paid: 0, remaining: 500000, emi: 10480 },
+  { id: "L003", customerId: "C003", customerName: "Anita Patel", amount: 150000, type: "Business", tenure: 12, interest: 15, status: "Active", disbursedDate: "2024-01-10", nextDue: "2025-05-10", paid: 120000, remaining: 30000, emi: 13500 },
+  { id: "L004", customerId: "C001", customerName: "Priya Sharma", amount: 100000, type: "Education", tenure: 36, interest: 11, status: "Closed", disbursedDate: "2023-06-01", nextDue: null, paid: 100000, remaining: 0, emi: 3267 },
+  { id: "L005", customerId: "C005", customerName: "Meena Joshi", amount: 75000, type: "Personal", tenure: 18, interest: 14, status: "Overdue", disbursedDate: "2024-01-15", nextDue: "2025-04-15", paid: 45000, remaining: 30000, emi: 4750 },
+  { id: "L006", customerId: "C003", customerName: "Anita Patel", amount: 300000, type: "Vehicle", tenure: 48, interest: 10.5, status: "Active", disbursedDate: "2024-03-01", nextDue: "2025-05-01", paid: 50000, remaining: 250000, emi: 7650 },
+];
+
+const TRANSACTIONS = [
+  { id: "T001", loanId: "L001", customerName: "Priya Sharma", amount: 11850, type: "EMI", date: "2025-04-15", status: "Success", mode: "UPI", ref: "UPI123456789" },
+  { id: "T002", loanId: "L003", customerName: "Anita Patel", amount: 13500, type: "EMI", date: "2025-04-10", status: "Success", mode: "NEFT", ref: "NEFT987654321" },
+  { id: "T003", loanId: "L005", customerName: "Meena Joshi", amount: 4750, type: "EMI", date: "2025-04-14", status: "Failed", mode: "Debit Card", ref: "DC456789123" },
+  { id: "T004", loanId: "L006", customerName: "Anita Patel", amount: 7650, type: "EMI", date: "2025-04-01", status: "Success", mode: "IMPS", ref: "IMPS321654987" },
+  { id: "T005", loanId: "L001", customerName: "Priya Sharma", amount: 11850, type: "EMI", date: "2025-03-15", status: "Success", mode: "UPI", ref: "UPI112233445" },
+  { id: "T006", loanId: "L003", customerName: "Anita Patel", amount: 50000, type: "Prepayment", date: "2025-03-05", status: "Success", mode: "NEFT", ref: "NEFT554433221" },
+  { id: "T007", loanId: "L004", customerName: "Priya Sharma", amount: 100000, type: "Closure", date: "2025-02-28", status: "Success", mode: "Bank Transfer", ref: "BT998877665" },
+];
+
+// ─── AUTH SCREEN ─────────────────────────────────────────────────────────────
+function AuthScreen({ onLogin }) {
+  const [email, setEmail] = useState("admin@lendingco.com");
+  const [password, setPassword] = useState("admin123");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = () => {
+    setError("");
+    if (!email || !password) { setError("Please fill all fields"); return; }
+    setLoading(true);
+    setTimeout(() => {
+      if (email === "admin@lendingco.com" && password === "admin123") {
+        onLogin({ name: "Admin User", email, role: "Super Admin" });
+      } else {
+        setError("Invalid credentials. Use admin@lendingco.com / admin123");
+        setLoading(false);
+      }
+    }, 1200);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${COLORS.sidebar} 0%, #1e3a5f 100%)`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      <div style={{ background: COLORS.white, borderRadius: 16, padding: "2.5rem", width: 380, boxShadow: "0 25px 60px rgba(0,0,0,0.4)" }}>
+        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: COLORS.primary, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem", fontSize: 24 }}>💰</div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: COLORS.gray900 }}>LendPro Admin</h1>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.gray500 }}>Finance Management System</p>
+        </div>
+        {error && <div style={{ background: COLORS.dangerLight, color: COLORS.danger, padding: "10px 14px", borderRadius: 8, fontSize: 13, marginBottom: 16, border: `1px solid #fca5a5` }}>{error}</div>}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: COLORS.gray700, marginBottom: 6 }}>Email Address</label>
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@lendingco.com" style={{ width: "100%", padding: "10px 14px", border: `1.5px solid ${COLORS.gray200}`, borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box", color: COLORS.gray800 }} />
+        </div>
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: COLORS.gray700, marginBottom: 6 }}>Password</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={{ width: "100%", padding: "10px 14px", border: `1.5px solid ${COLORS.gray200}`, borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box", color: COLORS.gray800 }} />
+        </div>
+        <button onClick={handleLogin} disabled={loading} style={{ width: "100%", padding: "12px", background: loading ? COLORS.gray400 : COLORS.primary, color: COLORS.white, border: "none", borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer" }}>
+          {loading ? "Signing in..." : "Sign In"}
+        </button>
+        <p style={{ textAlign: "center", fontSize: 12, color: COLORS.gray400, marginTop: 16 }}>Demo: admin@lendingco.com / admin123</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { id: "dashboard", label: "Dashboard", icon: "🏠" },
+  { id: "customers", label: "Customers", icon: "👥" },
+  { id: "loans", label: "Loan Management", icon: "📋" },
+  { id: "payments", label: "Payments", icon: "💳" },
+];
+
+function Sidebar({ active, setActive, user, onLogout }) {
+  return (
+    <div style={{ width: 240, background: COLORS.sidebar, height: "100vh", display: "flex", flexDirection: "column", flexShrink: 0, position: "sticky", top: 0 }}>
+      <div style={{ padding: "1.5rem 1.25rem", borderBottom: "1px solid #1e293b" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: COLORS.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>💰</div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#f8fafc" }}>LendPro</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>Admin Panel</div>
+          </div>
+        </div>
+      </div>
+      <nav style={{ flex: 1, padding: "1rem 0" }}>
+        {NAV_ITEMS.map(item => (
+          <button key={item.id} onClick={() => setActive(item.id)}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 20px", background: active === item.id ? "#1d4ed8" : "transparent", color: active === item.id ? "#fff" : "#94a3b8", border: "none", cursor: "pointer", fontSize: 14, fontWeight: active === item.id ? 600 : 400, textAlign: "left", borderLeft: active === item.id ? "3px solid #60a5fa" : "3px solid transparent" }}>
+            <span style={{ fontSize: 16 }}>{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+      </nav>
+      <div style={{ padding: "1rem 1.25rem", borderTop: "1px solid #1e293b" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#1d4ed8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#fff", fontWeight: 700 }}>A</div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#f1f5f9" }}>{user.name}</div>
+            <div style={{ fontSize: 11, color: "#64748b" }}>{user.role}</div>
+          </div>
+        </div>
+        <button onClick={onLogout} style={{ width: "100%", padding: "8px", background: "#1e293b", color: "#94a3b8", border: "none", borderRadius: 6, fontSize: 13, cursor: "pointer" }}>Sign Out</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── STAT CARD ────────────────────────────────────────────────────────────────
+function StatCard({ label, value, sub, icon, color = COLORS.primary, bg = COLORS.primaryLight }) {
+  return (
+    <div style={{ background: COLORS.white, borderRadius: 12, padding: "1.25rem", border: `1px solid ${COLORS.gray200}`, flex: 1, minWidth: 160 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <p style={{ margin: 0, fontSize: 12, color: COLORS.gray500, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
+          <p style={{ margin: "6px 0 2px", fontSize: 26, fontWeight: 700, color: COLORS.gray900 }}>{value}</p>
+          {sub && <p style={{ margin: 0, fontSize: 12, color: COLORS.gray400 }}>{sub}</p>}
+        </div>
+        <div style={{ width: 44, height: 44, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{icon}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── BADGE ────────────────────────────────────────────────────────────────────
+function Badge({ status }) {
+  const map = {
+    Active: { bg: COLORS.successLight, color: COLORS.success },
+    Pending: { bg: COLORS.warningLight, color: COLORS.warning },
+    Closed: { bg: COLORS.gray100, color: COLORS.gray600 },
+    Overdue: { bg: COLORS.dangerLight, color: COLORS.danger },
+    Verified: { bg: COLORS.successLight, color: COLORS.success },
+    Rejected: { bg: COLORS.dangerLight, color: COLORS.danger },
+    Success: { bg: COLORS.successLight, color: COLORS.success },
+    Failed: { bg: COLORS.dangerLight, color: COLORS.danger },
+    Approved: { bg: COLORS.successLight, color: COLORS.success },
+  };
+  const s = map[status] || { bg: COLORS.gray100, color: COLORS.gray600 };
+  return (
+    <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color }}>{status}</span>
+  );
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function Dashboard() {
+  const totalLoans = LOANS.length;
+  const activeLoans = LOANS.filter(l => l.status === "Active").length;
+  const totalDisbursed = LOANS.filter(l => l.status !== "Pending").reduce((s, l) => s + l.amount, 0);
+  const totalCollected = TRANSACTIONS.filter(t => t.status === "Success").reduce((s, t) => s + t.amount, 0);
+  const overdueLoans = LOANS.filter(l => l.status === "Overdue").length;
+
+  const recentTx = TRANSACTIONS.slice(0, 5);
+  const pendingLoans = LOANS.filter(l => l.status === "Pending");
+
+  return (
+    <div>
+      <div style={{ marginBottom: "1.5rem" }}>
+        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: COLORS.gray900 }}>Dashboard</h2>
+        <p style={{ margin: "4px 0 0", color: COLORS.gray500, fontSize: 14 }}>Welcome back! Here's what's happening today.</p>
+      </div>
+
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: "1.5rem" }}>
+        <StatCard label="Total Customers" value={CUSTOMERS.length} sub="+2 this month" icon="👥" color={COLORS.primary} bg={COLORS.primaryLight} />
+        <StatCard label="Active Loans" value={activeLoans} sub={`${totalLoans} total`} icon="📋" color="#7c3aed" bg="#ede9fe" />
+        <StatCard label="Disbursed Amount" value={`₹${(totalDisbursed / 100000).toFixed(1)}L`} sub="Total portfolio" icon="💰" color={COLORS.success} bg={COLORS.successLight} />
+        <StatCard label="Collections" value={`₹${(totalCollected / 1000).toFixed(0)}K`} sub="This month" icon="✅" color={COLORS.warning} bg={COLORS.warningLight} />
+        <StatCard label="Overdue Loans" value={overdueLoans} sub="Needs attention" icon="⚠️" color={COLORS.danger} bg={COLORS.dangerLight} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: "1.5rem" }}>
+        {/* Loan Portfolio Chart */}
+        <div style={{ background: COLORS.white, borderRadius: 12, border: `1px solid ${COLORS.gray200}`, padding: "1.25rem" }}>
+          <h3 style={{ margin: "0 0 1rem", fontSize: 15, fontWeight: 600, color: COLORS.gray800 }}>Loan Portfolio Breakdown</h3>
+          {[
+            { type: "Personal", count: 2, pct: 33, color: "#3b82f6" },
+            { type: "Home", count: 1, pct: 17, color: "#8b5cf6" },
+            { type: "Business", count: 1, pct: 17, color: "#10b981" },
+            { type: "Vehicle", count: 1, pct: 17, color: "#f59e0b" },
+            { type: "Education", count: 1, pct: 16, color: "#ef4444" },
+          ].map(item => (
+            <div key={item.type} style={{ marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: 13, color: COLORS.gray700 }}>{item.type}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.gray700 }}>{item.count} loans · {item.pct}%</span>
+              </div>
+              <div style={{ height: 6, background: COLORS.gray100, borderRadius: 3 }}>
+                <div style={{ height: "100%", width: `${item.pct}%`, background: item.color, borderRadius: 3 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pending Approvals */}
+        <div style={{ background: COLORS.white, borderRadius: 12, border: `1px solid ${COLORS.gray200}`, padding: "1.25rem" }}>
+          <h3 style={{ margin: "0 0 1rem", fontSize: 15, fontWeight: 600, color: COLORS.gray800 }}>Pending Approvals</h3>
+          {pendingLoans.length === 0 ? (
+            <p style={{ color: COLORS.gray400, fontSize: 14 }}>No pending applications</p>
+          ) : (
+            pendingLoans.map(loan => (
+              <div key={loan.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${COLORS.gray100}` }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: COLORS.gray800 }}>{loan.customerName}</div>
+                  <div style={{ fontSize: 12, color: COLORS.gray500 }}>{loan.type} · ₹{loan.amount.toLocaleString()}</div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button style={{ padding: "5px 12px", background: COLORS.successLight, color: COLORS.success, border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Approve</button>
+                  <button style={{ padding: "5px 12px", background: COLORS.dangerLight, color: COLORS.danger, border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Reject</button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Recent Transactions */}
+      <div style={{ background: COLORS.white, borderRadius: 12, border: `1px solid ${COLORS.gray200}`, padding: "1.25rem" }}>
+        <h3 style={{ margin: "0 0 1rem", fontSize: 15, fontWeight: 600, color: COLORS.gray800 }}>Recent Transactions</h3>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${COLORS.gray100}` }}>
+              {["Txn ID", "Customer", "Amount", "Type", "Date", "Mode", "Status"].map(h => (
+                <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontSize: 12, fontWeight: 600, color: COLORS.gray500, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {recentTx.map(tx => (
+              <tr key={tx.id} style={{ borderBottom: `1px solid ${COLORS.gray50}` }}>
+                <td style={{ padding: "10px 12px", color: COLORS.primary, fontWeight: 600, fontSize: 13 }}>{tx.id}</td>
+                <td style={{ padding: "10px 12px", color: COLORS.gray800 }}>{tx.customerName}</td>
+                <td style={{ padding: "10px 12px", fontWeight: 600, color: COLORS.gray800 }}>₹{tx.amount.toLocaleString()}</td>
+                <td style={{ padding: "10px 12px", color: COLORS.gray600 }}>{tx.type}</td>
+                <td style={{ padding: "10px 12px", color: COLORS.gray500 }}>{tx.date}</td>
+                <td style={{ padding: "10px 12px", color: COLORS.gray600 }}>{tx.mode}</td>
+                <td style={{ padding: "10px 12px" }}><Badge status={tx.status} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── CUSTOMERS ────────────────────────────────────────────────────────────────
+function Customers() {
+  const [customers, setCustomers] = useState(CUSTOMERS);
+  const [search, setSearch] = useState("");
+  const [modal, setModal] = useState(null); // null | "add" | "edit" | "view"
+  const [selected, setSelected] = useState(null);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", city: "", kyc: "Pending", creditScore: "" });
+
+  const filtered = customers.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.email.toLowerCase().includes(search.toLowerCase()) ||
+    c.id.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const openAdd = () => { setForm({ name: "", email: "", phone: "", city: "", kyc: "Pending", creditScore: "" }); setModal("add"); };
+  const openEdit = (c) => { setSelected(c); setForm({ name: c.name, email: c.email, phone: c.phone, city: c.city, kyc: c.kyc, creditScore: c.creditScore }); setModal("edit"); };
+  const openView = (c) => { setSelected(c); setModal("view"); };
+
+  const handleSave = () => {
+    if (!form.name || !form.email || !form.phone) return;
+    if (modal === "add") {
+      const newC = { ...form, id: `C00${customers.length + 1}`, loans: 0, joinDate: new Date().toISOString().split("T")[0], creditScore: Number(form.creditScore) || 600 };
+      setCustomers([...customers, newC]);
+    } else {
+      setCustomers(customers.map(c => c.id === selected.id ? { ...c, ...form, creditScore: Number(form.creditScore) } : c));
+    }
+    setModal(null);
+  };
+
+  const handleDelete = (id) => { if (window.confirm("Delete this customer?")) setCustomers(customers.filter(c => c.id !== id)); };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: COLORS.gray900 }}>Customer Management</h2>
+          <p style={{ margin: "4px 0 0", color: COLORS.gray500, fontSize: 14 }}>{customers.length} total customers</p>
+        </div>
+        <button onClick={openAdd} style={{ padding: "10px 20px", background: COLORS.primary, color: COLORS.white, border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Add Customer</button>
+      </div>
+
+      <div style={{ background: COLORS.white, borderRadius: 12, border: `1px solid ${COLORS.gray200}`, overflow: "hidden" }}>
+        <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${COLORS.gray100}` }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Search by name, email or ID..." style={{ width: "100%", maxWidth: 360, padding: "8px 14px", border: `1px solid ${COLORS.gray200}`, borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+          <thead>
+            <tr style={{ background: COLORS.gray50, borderBottom: `1px solid ${COLORS.gray200}` }}>
+              {["Customer", "Contact", "City", "Credit Score", "KYC Status", "Loans", "Actions"].map(h => (
+                <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: COLORS.gray500, textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(c => (
+              <tr key={c.id} style={{ borderBottom: `1px solid ${COLORS.gray50}` }}>
+                <td style={{ padding: "12px 14px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: COLORS.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: COLORS.primary, flexShrink: 0 }}>{c.name.charAt(0)}</div>
+                    <div>
+                      <div style={{ fontWeight: 600, color: COLORS.gray800 }}>{c.name}</div>
+                      <div style={{ fontSize: 12, color: COLORS.gray500 }}>{c.id}</div>
+                    </div>
+                  </div>
+                </td>
+                <td style={{ padding: "12px 14px" }}>
+                  <div style={{ color: COLORS.gray700 }}>{c.email}</div>
+                  <div style={{ fontSize: 12, color: COLORS.gray500 }}>{c.phone}</div>
+                </td>
+                <td style={{ padding: "12px 14px", color: COLORS.gray600 }}>{c.city}</td>
+                <td style={{ padding: "12px 14px" }}>
+                  <span style={{ fontWeight: 700, color: c.creditScore >= 750 ? COLORS.success : c.creditScore >= 650 ? COLORS.warning : COLORS.danger }}>{c.creditScore}</span>
+                </td>
+                <td style={{ padding: "12px 14px" }}><Badge status={c.kyc} /></td>
+                <td style={{ padding: "12px 14px", color: COLORS.gray700, fontWeight: 600 }}>{c.loans}</td>
+                <td style={{ padding: "12px 14px" }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => openView(c)} style={{ padding: "4px 10px", background: COLORS.primaryLight, color: COLORS.primary, border: "none", borderRadius: 5, fontSize: 12, cursor: "pointer" }}>View</button>
+                    <button onClick={() => openEdit(c)} style={{ padding: "4px 10px", background: COLORS.warningLight, color: COLORS.warning, border: "none", borderRadius: 5, fontSize: 12, cursor: "pointer" }}>Edit</button>
+                    <button onClick={() => handleDelete(c.id)} style={{ padding: "4px 10px", background: COLORS.dangerLight, color: COLORS.danger, border: "none", borderRadius: 5, fontSize: 12, cursor: "pointer" }}>Delete</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal */}
+      {modal && modal !== "view" && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: COLORS.white, borderRadius: 14, padding: "1.75rem", width: 460, boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
+            <h3 style={{ margin: "0 0 1.25rem", fontSize: 18, fontWeight: 700 }}>{modal === "add" ? "Add New Customer" : "Edit Customer"}</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+              {[["Full Name", "name", "text"], ["Email", "email", "email"], ["Phone", "phone", "text"], ["City", "city", "text"], ["Credit Score", "creditScore", "number"]].map(([label, key, type]) => (
+                <div key={key} style={{ gridColumn: key === "name" || key === "email" ? "1/-1" : "auto" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.gray700, marginBottom: 5 }}>{label}</label>
+                  <input type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} style={{ width: "100%", padding: "8px 12px", border: `1px solid ${COLORS.gray200}`, borderRadius: 7, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                </div>
+              ))}
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.gray700, marginBottom: 5 }}>KYC Status</label>
+                <select value={form.kyc} onChange={e => setForm({ ...form, kyc: e.target.value })} style={{ width: "100%", padding: "8px 12px", border: `1px solid ${COLORS.gray200}`, borderRadius: 7, fontSize: 14, outline: "none" }}>
+                  <option>Pending</option><option>Verified</option><option>Rejected</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setModal(null)} style={{ padding: "9px 20px", background: COLORS.gray100, border: "none", borderRadius: 7, cursor: "pointer", fontSize: 14 }}>Cancel</button>
+              <button onClick={handleSave} style={{ padding: "9px 20px", background: COLORS.primary, color: COLORS.white, border: "none", borderRadius: 7, cursor: "pointer", fontSize: 14, fontWeight: 600 }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modal === "view" && selected && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: COLORS.white, borderRadius: 14, padding: "1.75rem", width: 420 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.25rem" }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Customer Details</h3>
+              <button onClick={() => setModal(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: COLORS.gray400 }}>×</button>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: "1.25rem", padding: "1rem", background: COLORS.gray50, borderRadius: 10 }}>
+              <div style={{ width: 52, height: 52, borderRadius: "50%", background: COLORS.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, color: COLORS.primary }}>{selected.name.charAt(0)}</div>
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: COLORS.gray900 }}>{selected.name}</div>
+                <div style={{ fontSize: 13, color: COLORS.gray500 }}>{selected.id} · Joined {selected.joinDate}</div>
+                <Badge status={selected.kyc} />
+              </div>
+            </div>
+            {[["Email", selected.email], ["Phone", selected.phone], ["City", selected.city], ["Credit Score", selected.creditScore], ["Active Loans", selected.loans]].map(([k, v]) => (
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${COLORS.gray100}`, fontSize: 14 }}>
+                <span style={{ color: COLORS.gray500 }}>{k}</span>
+                <span style={{ fontWeight: 600, color: COLORS.gray800 }}>{v}</span>
+              </div>
+            ))}
+            <button onClick={() => setModal(null)} style={{ marginTop: "1rem", width: "100%", padding: "10px", background: COLORS.primary, color: COLORS.white, border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>Close</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── LOANS ────────────────────────────────────────────────────────────────────
+function Loans() {
+  const [loans, setLoans] = useState(LOANS);
+  const [filter, setFilter] = useState("All");
+  const [modal, setModal] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [form, setForm] = useState({ customerId: "", customerName: "", amount: "", type: "Personal", tenure: "", interest: "", emi: "" });
+
+  const statuses = ["All", "Active", "Pending", "Overdue", "Closed"];
+  const filtered = filter === "All" ? loans : loans.filter(l => l.status === filter);
+
+  const handleApprove = (id) => setLoans(loans.map(l => l.id === id ? { ...l, status: "Active", disbursedDate: new Date().toISOString().split("T")[0] } : l));
+  const handleReject = (id) => setLoans(loans.map(l => l.id === id ? { ...l, status: "Closed" } : l));
+
+  const handleAddLoan = () => {
+    if (!form.customerName || !form.amount) return;
+    const emi = Math.round((Number(form.amount) * (Number(form.interest) / 1200)) / (1 - Math.pow(1 + Number(form.interest) / 1200, -Number(form.tenure))));
+    setLoans([...loans, { ...form, id: `L00${loans.length + 1}`, amount: Number(form.amount), tenure: Number(form.tenure), interest: Number(form.interest), status: "Pending", disbursedDate: null, nextDue: null, paid: 0, remaining: Number(form.amount), emi }]);
+    setModal(null);
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: COLORS.gray900 }}>Loan Management</h2>
+          <p style={{ margin: "4px 0 0", color: COLORS.gray500, fontSize: 14 }}>{loans.length} loan applications</p>
+        </div>
+        <button onClick={() => setModal("add")} style={{ padding: "10px 20px", background: COLORS.primary, color: COLORS.white, border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ New Loan</button>
+      </div>
+
+      {/* Filter Tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: "1.25rem" }}>
+        {statuses.map(s => (
+          <button key={s} onClick={() => setFilter(s)}
+            style={{ padding: "7px 16px", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "none", background: filter === s ? COLORS.primary : COLORS.gray100, color: filter === s ? COLORS.white : COLORS.gray600 }}>{s}</button>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {filtered.map(loan => (
+          <div key={loan.id} style={{ background: COLORS.white, borderRadius: 12, border: `1px solid ${COLORS.gray200}`, padding: "1.25rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.gray900 }}>{loan.customerName}</div>
+                <div style={{ fontSize: 12, color: COLORS.gray500 }}>{loan.id} · {loan.type} Loan</div>
+              </div>
+              <Badge status={loan.status} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+              {[["Amount", `₹${loan.amount.toLocaleString()}`], ["Tenure", `${loan.tenure} mo`], ["Interest", `${loan.interest}% p.a.`], ["EMI", `₹${loan.emi.toLocaleString()}`], ["Paid", `₹${loan.paid.toLocaleString()}`], ["Remaining", `₹${loan.remaining.toLocaleString()}`]].map(([k, v]) => (
+                <div key={k} style={{ background: COLORS.gray50, borderRadius: 7, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 11, color: COLORS.gray400, marginBottom: 2 }}>{k}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.gray800 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {loan.status !== "Pending" && loan.amount > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: COLORS.gray500, marginBottom: 4 }}>
+                  <span>Repayment Progress</span>
+                  <span>{Math.round((loan.paid / loan.amount) * 100)}%</span>
+                </div>
+                <div style={{ height: 6, background: COLORS.gray100, borderRadius: 3 }}>
+                  <div style={{ height: "100%", width: `${(loan.paid / loan.amount) * 100}%`, background: loan.status === "Overdue" ? COLORS.danger : COLORS.success, borderRadius: 3 }} />
+                </div>
+              </div>
+            )}
+
+            {loan.status === "Pending" && (
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => handleApprove(loan.id)} style={{ flex: 1, padding: "8px", background: COLORS.success, color: COLORS.white, border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>✓ Approve</button>
+                <button onClick={() => handleReject(loan.id)} style={{ flex: 1, padding: "8px", background: COLORS.dangerLight, color: COLORS.danger, border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>✗ Reject</button>
+              </div>
+            )}
+            {loan.disbursedDate && (
+              <div style={{ fontSize: 12, color: COLORS.gray400 }}>Disbursed: {loan.disbursedDate}{loan.nextDue ? ` · Next due: ${loan.nextDue}` : ""}</div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {modal === "add" && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: COLORS.white, borderRadius: 14, padding: "1.75rem", width: 480 }}>
+            <h3 style={{ margin: "0 0 1.25rem", fontSize: 18, fontWeight: 700 }}>New Loan Application</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+              {[["Customer Name", "customerName", "text"], ["Amount (₹)", "amount", "number"], ["Tenure (months)", "tenure", "number"], ["Interest Rate (%)", "interest", "number"]].map(([label, key, type]) => (
+                <div key={key}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.gray700, marginBottom: 5 }}>{label}</label>
+                  <input type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} style={{ width: "100%", padding: "8px 12px", border: `1px solid ${COLORS.gray200}`, borderRadius: 7, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                </div>
+              ))}
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.gray700, marginBottom: 5 }}>Loan Type</label>
+                <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} style={{ width: "100%", padding: "8px 12px", border: `1px solid ${COLORS.gray200}`, borderRadius: 7, fontSize: 14, outline: "none" }}>
+                  {["Personal", "Home", "Business", "Vehicle", "Education"].map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setModal(null)} style={{ padding: "9px 20px", background: COLORS.gray100, border: "none", borderRadius: 7, cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleAddLoan} style={{ padding: "9px 20px", background: COLORS.primary, color: COLORS.white, border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 600 }}>Submit Application</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── PAYMENTS ─────────────────────────────────────────────────────────────────
+function Payments() {
+  const [transactions, setTransactions] = useState(TRANSACTIONS);
+  const [modal, setModal] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [form, setForm] = useState({ loanId: "", customerName: "", amount: "", type: "EMI", mode: "UPI" });
+
+  const filtered = filterStatus === "All" ? transactions : transactions.filter(t => t.status === filterStatus);
+  const totalSuccess = transactions.filter(t => t.status === "Success").reduce((s, t) => s + t.amount, 0);
+  const totalFailed = transactions.filter(t => t.status === "Failed").reduce((s, t) => s + t.amount, 0);
+
+  const handleRecord = () => {
+    if (!form.customerName || !form.amount) return;
+    const newTx = { ...form, id: `T00${transactions.length + 1}`, amount: Number(form.amount), date: new Date().toISOString().split("T")[0], status: "Success", ref: `REF${Math.random().toString(36).substr(2, 9).toUpperCase()}` };
+    setTransactions([newTx, ...transactions]);
+    setModal(false);
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: COLORS.gray900 }}>Payments & Transactions</h2>
+          <p style={{ margin: "4px 0 0", color: COLORS.gray500, fontSize: 14 }}>{transactions.length} total records</p>
+        </div>
+        <button onClick={() => setModal(true)} style={{ padding: "10px 20px", background: COLORS.primary, color: COLORS.white, border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Record Payment</button>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: "flex", gap: 16, marginBottom: "1.5rem", flexWrap: "wrap" }}>
+        <StatCard label="Total Collected" value={`₹${(totalSuccess / 1000).toFixed(1)}K`} sub="All time" icon="✅" color={COLORS.success} bg={COLORS.successLight} />
+        <StatCard label="Failed Payments" value={`₹${totalFailed.toLocaleString()}`} sub="Needs follow-up" icon="❌" color={COLORS.danger} bg={COLORS.dangerLight} />
+        <StatCard label="Transactions" value={transactions.length} sub={`${transactions.filter(t => t.status === "Success").length} successful`} icon="📊" color="#7c3aed" bg="#ede9fe" />
+        <StatCard label="This Month" value={`₹${(transactions.filter(t => t.date.startsWith("2025-04") && t.status === "Success").reduce((s, t) => s + t.amount, 0) / 1000).toFixed(1)}K`} sub="April 2025" icon="📅" color={COLORS.warning} bg={COLORS.warningLight} />
+      </div>
+
+      <div style={{ background: COLORS.white, borderRadius: 12, border: `1px solid ${COLORS.gray200}`, overflow: "hidden" }}>
+        <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${COLORS.gray100}`, display: "flex", gap: 8 }}>
+          {["All", "Success", "Failed"].map(s => (
+            <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: "6px 14px", borderRadius: 20, fontSize: 13, border: "none", cursor: "pointer", background: filterStatus === s ? COLORS.primary : COLORS.gray100, color: filterStatus === s ? COLORS.white : COLORS.gray600, fontWeight: 600 }}>{s}</button>
+          ))}
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+          <thead>
+            <tr style={{ background: COLORS.gray50 }}>
+              {["Txn ID", "Loan ID", "Customer", "Amount", "Type", "Date", "Mode", "Reference", "Status"].map(h => (
+                <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: COLORS.gray500, textTransform: "uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(tx => (
+              <tr key={tx.id} style={{ borderBottom: `1px solid ${COLORS.gray50}` }}>
+                <td style={{ padding: "11px 14px", color: COLORS.primary, fontWeight: 700, fontSize: 13 }}>{tx.id}</td>
+                <td style={{ padding: "11px 14px", color: COLORS.gray600 }}>{tx.loanId}</td>
+                <td style={{ padding: "11px 14px", fontWeight: 600, color: COLORS.gray800 }}>{tx.customerName}</td>
+                <td style={{ padding: "11px 14px", fontWeight: 700, color: COLORS.gray900 }}>₹{tx.amount.toLocaleString()}</td>
+                <td style={{ padding: "11px 14px" }}><span style={{ background: COLORS.primaryLight, color: COLORS.primary, padding: "2px 8px", borderRadius: 12, fontSize: 12, fontWeight: 600 }}>{tx.type}</span></td>
+                <td style={{ padding: "11px 14px", color: COLORS.gray500 }}>{tx.date}</td>
+                <td style={{ padding: "11px 14px", color: COLORS.gray600 }}>{tx.mode}</td>
+                <td style={{ padding: "11px 14px", fontSize: 12, color: COLORS.gray400, fontFamily: "monospace" }}>{tx.ref}</td>
+                <td style={{ padding: "11px 14px" }}><Badge status={tx.status} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: COLORS.white, borderRadius: 14, padding: "1.75rem", width: 420 }}>
+            <h3 style={{ margin: "0 0 1.25rem", fontSize: 18, fontWeight: 700 }}>Record Payment</h3>
+            <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
+              {[["Loan ID", "loanId", "text"], ["Customer Name", "customerName", "text"], ["Amount (₹)", "amount", "number"]].map(([label, key, type]) => (
+                <div key={key}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.gray700, marginBottom: 5 }}>{label}</label>
+                  <input type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} style={{ width: "100%", padding: "8px 12px", border: `1px solid ${COLORS.gray200}`, borderRadius: 7, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+                </div>
+              ))}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {[["Payment Type", "type", ["EMI", "Prepayment", "Closure", "Penalty"]], ["Payment Mode", "mode", ["UPI", "NEFT", "IMPS", "Debit Card", "Bank Transfer"]]].map(([label, key, opts]) => (
+                  <div key={key}>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.gray700, marginBottom: 5 }}>{label}</label>
+                    <select value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} style={{ width: "100%", padding: "8px 12px", border: `1px solid ${COLORS.gray200}`, borderRadius: 7, fontSize: 14, outline: "none" }}>
+                      {opts.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setModal(false)} style={{ padding: "9px 20px", background: COLORS.gray100, border: "none", borderRadius: 7, cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleRecord} style={{ padding: "9px 20px", background: COLORS.primary, color: COLORS.white, border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 600 }}>Record</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  if (!user) return <AuthScreen onLogin={setUser} />;
+
+  const PAGES = { dashboard: <Dashboard />, customers: <Customers />, loans: <Loans />, payments: <Payments /> };
+
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", background: COLORS.gray50, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      <Sidebar active={activeTab} setActive={setActiveTab} user={user} onLogout={() => setUser(null)} />
+      <main style={{ flex: 1, padding: "2rem", overflowY: "auto" }}>
+        {PAGES[activeTab]}
+      </main>
+    </div>
+  );
+}
